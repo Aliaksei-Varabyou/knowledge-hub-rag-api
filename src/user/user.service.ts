@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { UserRole } from 'src/common/enums';
 import { User } from 'src/common/types';
@@ -35,8 +35,7 @@ export class UserService {
       updatedAt: Date.now()
     }
     this.users.push(user);
-    const { password, ...result } = user;
-    return result;
+    return user;
   }
 
   async updatePassword(id: string, updatePasswordDto: UpdatePasswordDto): Promise<Omit<User, 'password'>> {
@@ -46,9 +45,8 @@ export class UserService {
     }
     user.password = updatePasswordDto.newPassword;
     user.updatedAt = Date.now();
-    
-    const { password, ...result } = user;
-    return result;
+
+    return user;
   }
 
   async delete(id: string): Promise<void> {

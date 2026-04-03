@@ -8,3 +8,9 @@ export type User = {
   createdAt: number,
   updatedAt: number
 }
+
+export type Category = {
+  id: string,
+  name: string
+  description: string
+}
