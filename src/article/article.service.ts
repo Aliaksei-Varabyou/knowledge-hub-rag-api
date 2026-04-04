@@ -1,13 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Article } from 'src/common/types';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { ArticleStatus } from 'src/common/enums';
 import { randomUUID } from 'node:crypto';
 import { UpdateArticleDto } from './dto/update-article.dto';
+import { CommentService } from 'src/comment/comment.service';
 
 @Injectable()
 export class ArticleService {
   private articles: Article[] = [];
+  constructor(
+    @Inject(forwardRef(() => CommentService))
+    private commentService: CommentService,
+  ) {}
 
   async findAll(status?: ArticleStatus, categoryId?: string, tag?: string): Promise<Article[]> {
     let results = this.articles;
@@ -61,6 +66,25 @@ export class ArticleService {
 
   async delete(id: string): Promise<void> {
     await this.findByIdOrThrow(id);
+    this.commentService.deleteByArticleId(id);
     this.articles = this.articles.filter(article => article.id !== id);
+  }
+
+  clearAuthor(userId: string): void {
+    this.articles = this.articles.map(article => {
+      return {
+        ...article,
+        authorId: article.authorId === userId ? null : article.authorId
+      }
+    });
+  }
+
+  clearCategory(categoryId: string): void {
+    this.articles = this.articles.map(article => {
+      return {
+        ...article,
+        categoryId: article.categoryId === categoryId ? null : article.categoryId
+      }
+    });
   }
 }

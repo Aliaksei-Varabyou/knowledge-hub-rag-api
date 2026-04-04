@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { ArticleService } from 'src/article/article.service';
 import { Comment } from 'src/common/types';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -7,7 +7,10 @@ import { randomUUID } from 'node:crypto';
 @Injectable()
 export class CommentService {
   private comments: Comment[] = [];
-  constructor(private articleService: ArticleService) {}
+  constructor(
+    @Inject(forwardRef(() => ArticleService))
+    private articleService: ArticleService,
+  ) {}
 
   async getByArticleId(articleId: string):Promise<Comment[]> {
     const article = await this.articleService.findById(articleId);
@@ -44,5 +47,13 @@ export class CommentService {
   async delete(id: string): Promise<void> {
     await this.findByIdOrThrow(id);
     this.comments = this.comments.filter(comment => comment.id !== id);
+  }
+
+  deleteByAuthorId(authorId: string): void {
+    this.comments = this.comments.filter(comment => comment.authorId !== authorId);
+  }
+
+  deleteByArticleId(articleId: string): void {
+    this.comments = this.comments.filter(comment => comment.articleId !== articleId);
   }
 }

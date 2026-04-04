@@ -4,10 +4,16 @@ import { UserRole } from 'src/common/enums';
 import { User } from 'src/common/types';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
+import { ArticleService } from 'src/article/article.service';
+import { CommentService } from 'src/comment/comment.service';
 
 @Injectable()
 export class UserService {
   private users: User[] = [];
+  constructor(
+    private articleService: ArticleService,
+    private commentService: CommentService,
+  ) {}
 
   async findAll(): Promise<User[]> {
     return this.users;
@@ -51,6 +57,8 @@ export class UserService {
 
   async delete(id: string): Promise<void> {
     await this.findByIdOrThrow(id);
+    this.articleService.clearAuthor(id);
+    this.commentService.deleteByAuthorId(id);
     this.users = this.users.filter(u => u.id !== id);
   }
 }

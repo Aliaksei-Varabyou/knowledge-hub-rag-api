@@ -3,10 +3,12 @@ import { randomUUID } from 'node:crypto';
 import { Category } from 'src/common/types';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { ArticleService } from 'src/article/article.service';
 
 @Injectable()
 export class CategoryService {
   private categories: Category[] = []
+  constructor(private articleService: ArticleService) {}
 
   async findAll(): Promise<Category[]> {
     return this.categories;
@@ -44,6 +46,7 @@ export class CategoryService {
 
   async delete(id: string): Promise<void> {
     await this.findByIdOrThrow(id);
+    this.articleService.clearCategory(id);
     this.categories = this.categories.filter(category => category.id !== id);
   }
 }
