@@ -41,7 +41,8 @@ export class UserService {
       updatedAt: Date.now()
     }
     this.users.push(user);
-    return user;
+    const { password, ...result } = user;
+    return result;
   }
 
   async updatePassword(id: string, updatePasswordDto: UpdatePasswordDto): Promise<Omit<User, 'password'>> {
@@ -52,7 +53,8 @@ export class UserService {
     user.password = updatePasswordDto.newPassword;
     user.updatedAt = Date.now();
 
-    return user;
+    const { password, ...result } = user;
+    return result;
   }
 
   async delete(id: string): Promise<void> {

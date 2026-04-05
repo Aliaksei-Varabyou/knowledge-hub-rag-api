@@ -20,8 +20,12 @@ export class CommentService {
     return this.comments.filter(comment => comment.articleId === articleId);
   }
   
+  async findById(id: string): Promise<Comment | undefined> {
+    return this.comments.find(comment => comment.id === id);
+  }
+  
   async findByIdOrThrow(id: string): Promise<Comment | never> {
-    const comment = this.comments.find(c => c.id === id);
+    const comment = await this.findById(id);
     if (!comment) {
       throw new NotFoundException(`Comment with ID "${id}" not found`);
     }

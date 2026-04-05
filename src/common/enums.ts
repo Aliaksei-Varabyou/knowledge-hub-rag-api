@@ -1,12 +1,12 @@
 
 export enum UserRole {
-  ADMIN,
-  EDITOR,
-  VIEWER
+  ADMIN = 'admin',
+  EDITOR = 'editor',
+  VIEWER = 'viewer',
 }
 
 export enum ArticleStatus {
-  DRAFT,
-  PUBLISHED,
-  ARCHIVED
+  DRAFT = 'draft',
+  PUBLISHED = 'published',
+  ARCHIVED = 'archived'
 }

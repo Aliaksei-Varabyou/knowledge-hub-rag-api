@@ -22,9 +22,21 @@ export class CommentController {
   async getCommentsByArticle(@Query('articleId') articleId: string) {
     return await this.commentService.getByArticleId(articleId);
   }
+
+  @Get(':id')
+  async getCommentById(@Param('id') id: string) {
+    if (!isValidUUID(id)) {
+      throw new BadRequestException('Invalid ID format');
+    }
+    const comment = await this.commentService.findByIdOrThrow(id);
+    return comment;
+  }
   
   @Post()
   createComment(@Body() createCommentDto: CreateCommentDto) {
+    if (!isValidUUID(createCommentDto.articleId)) {
+      throw new BadRequestException('Invalid ID format');
+    }
     return this.commentService.create(createCommentDto);
   }
   
