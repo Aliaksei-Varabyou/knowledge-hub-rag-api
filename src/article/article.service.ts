@@ -14,13 +14,37 @@ export class ArticleService {
     private commentService: CommentService,
   ) {}
 
-  async findAll(status?: ArticleStatus, categoryId?: string, tag?: string): Promise<Article[]> {
+  async findAll(
+    status?: ArticleStatus,
+    categoryId?: string,
+    tag?: string,
+    page?: string,
+    limit?: string,
+    sortBy?: keyof Article,
+    order?: 'asc' | 'desc'
+  ): Promise<Article[]> {
     let results = this.articles;
     if (status) results = results.filter(article => article.status === status);
     if (categoryId) results = results.filter(article => article.categoryId === categoryId);
     if (tag !== undefined) results = results.filter(article => article.tags.includes(tag));
 
-    return results;
+    if (sortBy) {
+      results.sort((a, b) => {
+        const fieldA = a[sortBy];
+        const fieldB = b[sortBy];
+
+        if (fieldA < fieldB) return order === 'desc' ? 1 : -1;
+        if (fieldA > fieldB) return order === 'desc' ? -1 : 1;
+        return 0;
+      });
+    }
+
+    const total = results.length
+    const pageNum = Number(page) || 1
+    const limitNum = Number(limit) || total
+    const start: number = (pageNum - 1) * limitNum
+    const end: number = start + limitNum
+    return results.slice(start, end);
   }
 
   findById(id: string): Article | undefined {

@@ -16,6 +16,7 @@ import { isValidUUID } from 'src/common/utils';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { ArticleStatus } from 'src/common/enums';
+import { Article } from 'src/common/types';
 
 @Controller('article')
 export class ArticleController {
@@ -26,8 +27,12 @@ export class ArticleController {
     @Query('status') status?: ArticleStatus,
     @Query('categoryId') categoryId?: string,
     @Query('tag') tag?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('sortBy') sortBy?: keyof Article,
+    @Query('order') order?: 'asc' | 'desc'
   ) {
-    return await this.articleService.findAll(status, categoryId, tag);
+    return await this.articleService.findAll(status, categoryId, tag, page, limit, sortBy, order);
   }
 
   @Get(':id')
