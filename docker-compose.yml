@@ -3,6 +3,7 @@ version: '3.9'
 services:
   app:
     build: .
+    image: aliakseivarabyou/knowledge-hub:latest
     ports:
       - '4000:4000'
     env_file:
@@ -53,4 +54,3 @@ networks:
 
 volumes:
   postgres-data:
-  

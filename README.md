@@ -58,3 +58,13 @@ npm run format
 Press <kbd>F5</kbd> to debug.
 
 For more information, visit: https://code.visualstudio.com/docs/editor/debugging
+
+## Docker Image
+
+The application image is available on Docker Hub:
+
+https://hub.docker.com/r/aliakseivarabyou/knowledge-hub
+
+You can pull and run it using:
+
+docker pull aliakseivarabyou/knowledge-hub:latest
