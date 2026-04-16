@@ -1,5 +1,5 @@
 import { IsEnum, IsString, IsArray, IsOptional } from 'class-validator';
-import { ArticleStatus } from "src/common/enums";
+import { ArticleStatus } from 'generated/prisma/enums';
 
 export class UpdateArticleDto {
   @IsOptional()
@@ -16,9 +16,9 @@ export class UpdateArticleDto {
   authorId?: string;
   @IsOptional()
   @IsString()
-  categoryId?: string
+  categoryId?: string;
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  tags?: string[]
+  tags?: string[];
 }

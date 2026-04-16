@@ -1,13 +1,13 @@
-import { ArticleStatus, UserRole } from "./enums"
+import { ArticleStatus, Role } from 'generated/prisma/enums';
 
 export type User = {
-  id: string,
-  login: string
-  password: string,
-  role: UserRole,
-  createdAt: number,
-  updatedAt: number
-}
+  id: string;
+  login: string;
+  password: string;
+  role: Role;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export type Category = {
   id: string,

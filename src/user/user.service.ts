@@ -1,66 +1,89 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
-import { UserRole } from 'src/common/enums';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { User } from 'src/common/types';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
-import { ArticleService } from 'src/article/article.service';
-import { CommentService } from 'src/comment/comment.service';
+import { PrismaService } from 'prisma/prisma.service';
+import { Role } from 'generated/prisma/enums';
+
+const returnedUser = {
+  id: true,
+  login: true,
+  role: true,
+  createdAt: true,
+  updatedAt: true,
+};
+
+type UserWithoutPassword = Omit<User, 'password'>;
 
 @Injectable()
 export class UserService {
-  private users: User[] = [];
-  constructor(
-    private articleService: ArticleService,
-    private commentService: CommentService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
-  async findAll(): Promise<User[]> {
-    return this.users;
+  async findAll(): Promise<UserWithoutPassword[]> {
+    return this.prisma.user.findMany({
+      select: returnedUser,
+    });
   }
 
   async findById(id: string): Promise<User | undefined> {
-    return this.users.find(u => u.id === id);
+    return await this.prisma.user.findUnique({ where: { id } });
   }
 
   async findByIdOrThrow(id: string): Promise<User | never> {
-    const user  = await this.findById(id);
+    const user = await this.findById(id);
     if (!user) {
       throw new NotFoundException(`User with ID "${id}" not found`);
     }
     return user;
   }
 
-  async create(createUserDto: CreateUserDto): Promise<Omit<User, 'password'>> {
-    const user: User = {
-      id: randomUUID(),
-      login: createUserDto.login,
-      password: createUserDto.password,
-      role: createUserDto.role ?? UserRole.VIEWER,
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    }
-    this.users.push(user);
-    const { password, ...result } = user;
-    return result;
+  async create(createUserDto: CreateUserDto): Promise<UserWithoutPassword> {
+    return this.prisma.user.create({
+      data: {
+        login: createUserDto.login,
+        password: createUserDto.password,
+        role: createUserDto.role ?? Role.VIEWER,
+      },
+      select: returnedUser,
+    });
   }
 
-  async updatePassword(id: string, updatePasswordDto: UpdatePasswordDto): Promise<Omit<User, 'password'>> {
+  async updatePassword(
+    id: string,
+    updatePasswordDto: UpdatePasswordDto,
+  ): Promise<UserWithoutPassword> {
     const user = await this.findByIdOrThrow(id);
     if (user.password !== updatePasswordDto.oldPassword) {
       throw new ForbiddenException('Old password does not match');
     }
-    user.password = updatePasswordDto.newPassword;
-    user.updatedAt = Date.now();
-
-    const { password, ...result } = user;
-    return result;
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        password: updatePasswordDto.newPassword,
+      },
+      select: returnedUser,
+    });
   }
 
   async delete(id: string): Promise<void> {
     await this.findByIdOrThrow(id);
-    this.articleService.clearAuthor(id);
-    this.commentService.deleteByAuthorId(id);
-    this.users = this.users.filter(u => u.id !== id);
+    this.prisma.$transaction(async (tx) => {
+      await tx.article.updateMany({
+        where: { authorId: id },
+        data: { authorId: null },
+      });
+
+      await tx.comment.deleteMany({
+        where: { authorId: id },
+      });
+
+      return await tx.user.delete({
+        where: { id },
+      });
+    });
   }
 }
