@@ -3,11 +3,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { User } from 'src/common/types';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { PrismaService } from 'prisma/prisma.service';
-import { Role } from 'generated/prisma/enums';
+import { Role, User } from '@prisma/client';
 
 const returnedUser = {
   id: true,
@@ -29,8 +28,8 @@ export class UserService {
     });
   }
 
-  async findById(id: string): Promise<User | undefined> {
-    return await this.prisma.user.findUnique({ where: { id } });
+  async findById(id: string): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { id } });
   }
 
   async findByIdOrThrow(id: string): Promise<User | never> {
@@ -70,20 +69,12 @@ export class UserService {
   }
 
   async delete(id: string): Promise<void> {
-    await this.findByIdOrThrow(id);
-    this.prisma.$transaction(async (tx) => {
-      await tx.article.updateMany({
-        where: { authorId: id },
-        data: { authorId: null },
-      });
-
-      await tx.comment.deleteMany({
-        where: { authorId: id },
-      });
-
-      return await tx.user.delete({
+    try {
+      await this.prisma.user.delete({
         where: { id },
       });
-    });
+    } catch {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
   }
 }

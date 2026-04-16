@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Category } from 'src/common/types';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { PrismaService } from 'prisma/prisma.service';
+import { Category } from 'generated/prisma/client';
 
 @Injectable()
 export class CategoryService {
@@ -12,7 +12,7 @@ export class CategoryService {
     return this.prisma.category.findMany();
   }
 
-  async findById(id: string): Promise<Category | undefined> {
+  async findById(id: string): Promise<Category | null> {
     return await this.prisma.category.findUnique({
       where: { id },
     });
@@ -28,10 +28,7 @@ export class CategoryService {
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
     return this.prisma.category.create({
-      data: {
-        name: createCategoryDto.name,
-        description: createCategoryDto.description,
-      },
+      data: createCategoryDto,
     });
   }
 
@@ -39,33 +36,20 @@ export class CategoryService {
     id: string,
     updateCategoryDto: UpdateCategoryDto,
   ): Promise<Category> {
-    const category = await this.findByIdOrThrow(id);
+    await this.findByIdOrThrow(id);
     return this.prisma.category.update({
       where: { id },
-      data: {
-        name:
-          updateCategoryDto.name !== undefined
-            ? updateCategoryDto.name
-            : category.name,
-        description:
-          updateCategoryDto.description !== undefined
-            ? updateCategoryDto.description
-            : category.description,
-      },
+      data: updateCategoryDto,
     });
   }
 
   async delete(id: string): Promise<void> {
-    await this.findByIdOrThrow(id);
-    this.prisma.$transaction(async (tx) => {
-      await tx.article.updateMany({
-        where: { categoryId: id },
-        data: { categoryId: null },
-      });
-
-      return tx.category.delete({
+    try {
+      await this.prisma.category.delete({
         where: { id },
       });
-    });
+    } catch {
+      throw new NotFoundException(`Category with ID "${id}" not found`);
+    }
   }
 }

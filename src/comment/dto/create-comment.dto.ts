@@ -9,5 +9,5 @@ export class CreateCommentDto {
   articleId: string;
   @IsOptional()
   @IsString()
-  authorId?: string
+  authorId?: string;
 }
