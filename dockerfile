@@ -20,7 +20,7 @@ ENV NODE_ENV=production
 
 COPY package*.json ./
 COPY prisma ./prisma/ 
-COPY prisma.config.ts /usr/src/app/prisma.config.ts
+COPY prisma.config.ts /app/prisma.config.ts
 
 RUN npm ci --omit=dev
 
@@ -28,9 +28,13 @@ COPY --from=builder /app/dist ./dist
 
 RUN npx prisma generate
 
+COPY entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
+
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
 EXPOSE 4000
 
+ENTRYPOINT ["./entrypoint.sh"]
 CMD ["node", "dist/src/main.js"]
