@@ -7,12 +7,14 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true, // delete fields not described in DTO
-    forbidNonWhitelisted: true, // error if we have not described fields
-    transform: true, // auto transform data types
-  }));
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // delete fields not described in DTO
+      forbidNonWhitelisted: true, // error if we have not described fields
+      transform: true, // auto transform data types
+    }),
+  );
 
   const config = new DocumentBuilder()
     .setTitle('Knowledge Hub API')

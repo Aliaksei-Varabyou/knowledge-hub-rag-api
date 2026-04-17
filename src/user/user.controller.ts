@@ -43,7 +43,10 @@ export class UserController {
   }
 
   @Put(':id')
-  async updateUserPassword(@Param('id') id: string, @Body() updatePasswordDto: UpdatePasswordDto) {
+  async updateUserPassword(
+    @Param('id') id: string,
+    @Body() updatePasswordDto: UpdatePasswordDto,
+  ) {
     if (!isValidUUID(id)) {
       throw new BadRequestException('Invalid ID format');
     }
@@ -58,5 +61,4 @@ export class UserController {
     }
     return await this.userService.delete(id);
   }
-  
 }

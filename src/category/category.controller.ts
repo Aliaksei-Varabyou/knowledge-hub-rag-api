@@ -18,7 +18,7 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 @Controller('category')
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
-  
+
   @Get()
   async getAllCategories() {
     return await this.categoryService.findAll();
@@ -39,7 +39,10 @@ export class CategoryController {
   }
 
   @Put(':id')
-  async updateCategory(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto) {
+  async updateCategory(
+    @Param('id') id: string,
+    @Body() updateCategoryDto: UpdateCategoryDto,
+  ) {
     if (!isValidUUID(id)) {
       throw new BadRequestException('Invalid ID format');
     }
@@ -54,5 +57,4 @@ export class CategoryController {
     }
     return await this.categoryService.delete(id);
   }
-
 }

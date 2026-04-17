@@ -31,7 +31,7 @@ export class CommentController {
     const comment = await this.commentService.findByIdOrThrow(id);
     return comment;
   }
-  
+
   @Post()
   createComment(@Body() createCommentDto: CreateCommentDto) {
     if (!isValidUUID(createCommentDto.articleId)) {
@@ -39,7 +39,7 @@ export class CommentController {
     }
     return this.commentService.create(createCommentDto);
   }
-  
+
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteComment(@Param('id') id: string) {
