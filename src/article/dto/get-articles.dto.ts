@@ -1,4 +1,4 @@
-import { ArticleStatus } from 'generated/prisma/enums';
+import { ArticleStatus } from 'generated/prisma/client';
 
 export class GetArticlesQueryDto {
   page?: number;

@@ -6,7 +6,7 @@ import {
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { PrismaService } from 'prisma/prisma.service';
-import { Role, User } from '@prisma/client';
+import { Role, User } from 'generated/prisma/client';
 
 const returnedUser = {
   id: true,

@@ -1,12 +1,12 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ArticleService } from './article.service';
 import { ArticleController } from './article.controller';
-import { CommentModule } from 'src/comment/comment.module';
+import { PrismaModule } from 'prisma/prisma.module';
 
 @Module({
-  imports: [forwardRef(() => CommentModule)],
+  imports: [PrismaModule],
   providers: [ArticleService],
   controllers: [ArticleController],
-  exports: [ArticleService]
+  exports: [ArticleService],
 })
 export class ArticleModule {}

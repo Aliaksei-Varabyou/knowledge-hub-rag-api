@@ -1,4 +1,4 @@
-import { ArticleStatus, Role } from 'generated/prisma/enums';
+import { ArticleStatus, Role } from 'generated/prisma/client';
 
 export type User = {
   id: string;

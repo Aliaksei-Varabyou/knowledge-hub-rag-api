@@ -3,8 +3,7 @@ import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { PrismaService } from 'prisma/prisma.service';
 import { GetArticlesQueryDto } from './dto/get-articles.dto';
-import { ArticleStatus } from 'generated/prisma/enums';
-import { Article } from 'generated/prisma/client';
+import { Article, ArticleStatus } from 'generated/prisma/client';
 
 @Injectable()
 export class ArticleService {

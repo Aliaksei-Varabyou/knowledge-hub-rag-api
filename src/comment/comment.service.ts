@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Comment } from '@prisma/client';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { PrismaService } from 'prisma/prisma.service';
+import { Comment } from 'generated/prisma/client';
 
 @Injectable()
 export class CommentService {
@@ -47,7 +47,11 @@ export class CommentService {
       throw new NotFoundException('Article not found');
     }
     return this.prisma.comment.create({
-      data: createCommentDto,
+      data: {
+        content: createCommentDto.content,
+        articleId: createCommentDto.articleId,
+        authorId: createCommentDto.authorId ?? null,
+      },
     });
   }
 
