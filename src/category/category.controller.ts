@@ -14,6 +14,8 @@ import { CategoryService } from './category.service';
 import { isValidUUID } from 'src/common/utils';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { Role } from 'generated/prisma/enums';
 
 @Controller('category')
 export class CategoryController {
@@ -33,11 +35,13 @@ export class CategoryController {
     return category;
   }
 
+  @Roles(Role.ADMIN, Role.EDITOR)
   @Post()
   async createCategory(@Body() createCategoryDto: CreateCategoryDto) {
     return await this.categoryService.create(createCategoryDto);
   }
 
+  @Roles(Role.ADMIN, Role.EDITOR)
   @Put(':id')
   async updateCategory(
     @Param('id') id: string,
@@ -49,6 +53,7 @@ export class CategoryController {
     return await this.categoryService.update(id, updateCategoryDto);
   }
 
+  @Roles(Role.ADMIN)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteCategory(@Param('id') id: string) {

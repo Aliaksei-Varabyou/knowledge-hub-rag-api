@@ -13,6 +13,8 @@ import {
 import { CommentService } from './comment.service';
 import { isValidUUID } from 'src/common/utils';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { Role } from 'generated/prisma/enums';
 
 @Controller('comment')
 export class CommentController {
@@ -32,6 +34,7 @@ export class CommentController {
     return comment;
   }
 
+  @Roles(Role.ADMIN, Role.EDITOR)
   @Post()
   createComment(@Body() createCommentDto: CreateCommentDto) {
     if (!isValidUUID(createCommentDto.articleId)) {
@@ -40,6 +43,7 @@ export class CommentController {
     return this.commentService.create(createCommentDto);
   }
 
+  @Roles(Role.ADMIN)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteComment(@Param('id') id: string) {

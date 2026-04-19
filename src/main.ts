@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { JwtGuard } from './auth/jwt/jwt.guard';
+import { RolesGuard } from './auth/roles/roles.guard';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
@@ -15,6 +17,8 @@ async function bootstrap() {
       transform: true, // auto transform data types
     }),
   );
+
+  app.useGlobalGuards(app.get(JwtGuard), app.get(RolesGuard));
 
   const config = new DocumentBuilder()
     .setTitle('Knowledge Hub API')

@@ -7,6 +7,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { PrismaService } from 'prisma/prisma.service';
 import { Role, User } from 'generated/prisma/client';
+import { CurrentUserType } from 'src/common/types';
 
 const returnedUser = {
   id: true,
@@ -58,8 +59,12 @@ export class UserService {
   async updatePassword(
     id: string,
     updatePasswordDto: UpdatePasswordDto,
+    currentUser: CurrentUserType,
   ): Promise<UserWithoutPassword> {
     const user = await this.findByIdOrThrow(id);
+    if (user.role === Role.EDITOR && currentUser.userId !== user.id) {
+      throw new ForbiddenException('Editor can update only own resources');
+    }
     if (user.password !== updatePasswordDto.oldPassword) {
       throw new ForbiddenException('Old password does not match');
     }

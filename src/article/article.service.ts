@@ -1,9 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { PrismaService } from 'prisma/prisma.service';
 import { GetArticlesQueryDto } from './dto/get-articles.dto';
-import { Article, ArticleStatus } from 'generated/prisma/client';
+import { Article, ArticleStatus, Role } from 'generated/prisma/client';
+import { CurrentUserType } from 'src/common/types';
 
 @Injectable()
 export class ArticleService {
@@ -95,7 +100,13 @@ export class ArticleService {
   async update(
     id: string,
     updateArticleDto: UpdateArticleDto,
+    user: CurrentUserType,
   ): Promise<Article> {
+    const article = await this.prisma.article.findUnique({ where: { id } });
+    if (user.role === Role.EDITOR && article.authorId !== user.userId) {
+      throw new ForbiddenException('Editor can update only own resources');
+    }
+
     return await this.prisma.article.update({
       where: { id },
       data: {

@@ -9,6 +9,12 @@ export type User = {
   updatedAt: Date;
 };
 
+export type CurrentUserType = {
+  userId: string;
+  login: string;
+  role: string;
+};
+
 export type Category = {
   id: string;
   name: string;
