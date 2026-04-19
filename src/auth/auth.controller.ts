@@ -26,14 +26,14 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   async login(@Body() dto: LoginDto) {
-    await this.authService.login(dto);
+    return await this.authService.login(dto);
   }
 
   @Public()
   @Post('refresh')
   @HttpCode(200)
   async refresh(@Body() dto: RefreshDto) {
-    await this.authService.refresh(dto);
+    return await this.authService.refresh(dto);
   }
 
   @Post('logout')
