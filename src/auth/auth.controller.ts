@@ -4,12 +4,14 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { Public } from './decorators/public.decorator';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Public()
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('signup')
   async signup(@Body() dto: SignupDto) {
     await this.authService.signUp(dto);
@@ -20,6 +22,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('login')
   @HttpCode(200)
   async login(@Body() dto: LoginDto) {
@@ -31,5 +34,10 @@ export class AuthController {
   @HttpCode(200)
   async refresh(@Body() dto: RefreshDto) {
     await this.authService.refresh(dto);
+  }
+
+  @Post('logout')
+  logout(@Body('refreshToken') refreshToken: string) {
+    return this.authService.logout(refreshToken);
   }
 }

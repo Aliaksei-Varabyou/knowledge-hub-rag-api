@@ -15,6 +15,7 @@ import { RefreshDto } from './dto/refresh.dto';
 
 @Injectable()
 export class AuthService {
+  private blacklistedTokens = new Set<string>();
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
@@ -77,6 +78,9 @@ export class AuthService {
     if (!refreshToken) {
       throw new UnauthorizedException('No access token proveded');
     }
+    if (this.blacklistedTokens.has(refreshToken)) {
+      throw new ForbiddenException('Token is blacklisted');
+    }
 
     let payload: any;
     try {
@@ -111,5 +115,15 @@ export class AuthService {
       accessToken,
       refreshToken: newRefreshToken,
     };
+  }
+
+  async logout(refreshToken: string) {
+    if (!refreshToken) {
+      throw new UnauthorizedException('No refresh token');
+    }
+
+    this.blacklistedTokens.add(refreshToken);
+
+    return { message: 'Logged out successfully' };
   }
 }
