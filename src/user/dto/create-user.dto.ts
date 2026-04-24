@@ -1,4 +1,10 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 import { Role } from 'src/common/types';
 
 export class CreateUserDto {
@@ -6,6 +12,7 @@ export class CreateUserDto {
   @IsString()
   login: string;
   @IsNotEmpty()
+  @MinLength(6)
   @IsString()
   password: string;
   @IsOptional()
