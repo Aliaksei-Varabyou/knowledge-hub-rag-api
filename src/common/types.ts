@@ -1,4 +1,18 @@
-import { ArticleStatus, Role } from 'generated/prisma/client';
+export const Role = {
+  ADMIN: 'ADMIN',
+  EDITOR: 'EDITOR',
+  VIEWER: 'VIEWER',
+} as const;
+
+export type Role = (typeof Role)[keyof typeof Role];
+
+export const ArticleStatus = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+export type ArticleStatus = (typeof ArticleStatus)[keyof typeof ArticleStatus];
 
 export type User = {
   id: string;

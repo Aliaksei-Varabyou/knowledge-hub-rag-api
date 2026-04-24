@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { SignupDto } from './dto/signup.dto';
 import { UserService } from 'src/user/user.service';
-import { Role } from 'generated/prisma/enums';
+import { Role } from 'src/common/types';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { ConfigService } from '@nestjs/config';

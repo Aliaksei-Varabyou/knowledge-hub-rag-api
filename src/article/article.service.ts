@@ -7,8 +7,8 @@ import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { PrismaService } from 'prisma/prisma.service';
 import { GetArticlesQueryDto } from './dto/get-articles.dto';
-import { Article, ArticleStatus, Role } from 'generated/prisma/client';
-import { CurrentUserType } from 'src/common/types';
+import { Article } from 'generated/prisma/client';
+import { CurrentUserType, ArticleStatus, Role } from 'src/common/types';
 
 @Injectable()
 export class ArticleService {

@@ -1,4 +1,4 @@
-import { ArticleStatus } from 'generated/prisma/client';
+import { ArticleStatus } from 'src/common/types';
 
 export class GetArticlesQueryDto {
   page?: number;
