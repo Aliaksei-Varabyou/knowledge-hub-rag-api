@@ -4,11 +4,15 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { JwtGuard } from './auth/jwt/jwt.guard';
 import { RolesGuard } from './auth/roles/roles.guard';
+import { AppLogger } from './common/logger/logger.service';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  const logger = new AppLogger();
+  app.useLogger(logger);
 
   app.useGlobalPipes(
     new ValidationPipe({
