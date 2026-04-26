@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { JwtGuard } from './auth/jwt/jwt.guard';
 import { RolesGuard } from './auth/roles/roles.guard';
 import { AppLogger } from './common/logger/logger.service';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
@@ -13,6 +14,8 @@ async function bootstrap() {
 
   const logger = new AppLogger();
   app.useLogger(logger);
+
+  app.useGlobalFilters(new GlobalExceptionFilter(app.get(AppLogger)));
 
   app.useGlobalPipes(
     new ValidationPipe({
