@@ -1,14 +1,12 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { PrismaService } from 'prisma/prisma.service';
 import { GetArticlesQueryDto } from './dto/get-articles.dto';
 import { Article } from 'generated/prisma/client';
 import { CurrentUserType, ArticleStatus, Role } from 'src/common/types';
+import { NotFoundError } from 'src/common/errors/not-found.error';
+import { ForbiddenError } from 'src/common/errors/forbidden.error';
 
 @Injectable()
 export class ArticleService {
@@ -72,7 +70,7 @@ export class ArticleService {
   async findByIdOrThrow(id: string): Promise<Article | never> {
     const article = await this.findById(id);
     if (!article) {
-      throw new NotFoundException(`Article with ID "${id}" not found`);
+      throw new NotFoundError(`Article with ID "${id}" not found`);
     }
     return article;
   }
@@ -104,7 +102,7 @@ export class ArticleService {
   ): Promise<Article> {
     const article = await this.prisma.article.findUnique({ where: { id } });
     if (user.role === Role.EDITOR && article.authorId !== user.userId) {
-      throw new ForbiddenException('Editor can update only own resources');
+      throw new ForbiddenError('Editor can update only own resources');
     }
 
     return await this.prisma.article.update({
@@ -128,7 +126,7 @@ export class ArticleService {
     try {
       await this.prisma.article.delete({ where: { id } });
     } catch {
-      throw new NotFoundException(`Article with ID "${id}" not found`);
+      throw new NotFoundError(`Article with ID "${id}" not found`);
     }
   }
 }

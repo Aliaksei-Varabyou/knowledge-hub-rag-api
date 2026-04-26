@@ -1,13 +1,11 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { PrismaService } from 'prisma/prisma.service';
 import { User } from 'generated/prisma/client';
 import { CurrentUserType, Role } from 'src/common/types';
+import { ForbiddenError } from 'src/common/errors/forbidden.error';
+import { NotFoundError } from 'src/common/errors/not-found.error';
 
 const returnedUser = {
   id: true,
@@ -40,7 +38,7 @@ export class UserService {
   async findByIdOrThrow(id: string): Promise<User | never> {
     const user = await this.findById(id);
     if (!user) {
-      throw new NotFoundException(`User with ID "${id}" not found`);
+      throw new NotFoundError(`User with ID "${id}" not found`);
     }
     return user;
   }
@@ -63,10 +61,10 @@ export class UserService {
   ): Promise<UserWithoutPassword> {
     const user = await this.findByIdOrThrow(id);
     if (user.role === Role.EDITOR && currentUser.userId !== user.id) {
-      throw new ForbiddenException('Editor can update only own resources');
+      throw new ForbiddenError('Editor can update only own resources');
     }
     if (user.password !== updatePasswordDto.oldPassword) {
-      throw new ForbiddenException('Old password does not match');
+      throw new ForbiddenError('Old password does not match');
     }
     return this.prisma.user.update({
       where: { id },
@@ -83,7 +81,7 @@ export class UserService {
         where: { id },
       });
     } catch {
-      throw new NotFoundException(`User with ID "${id}" not found`);
+      throw new NotFoundError(`User with ID "${id}" not found`);
     }
   }
 }
