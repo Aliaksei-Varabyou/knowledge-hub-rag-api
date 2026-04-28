@@ -11,9 +11,11 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { LoggingMiddleware } from './common/middleware/logging.middleware';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
+    AiModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -30,6 +32,7 @@ import { LoggingMiddleware } from './common/middleware/logging.middleware';
     ArticleModule,
     CommentModule,
     AuthModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [
