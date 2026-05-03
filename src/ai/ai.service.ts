@@ -1,13 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { GeminiService } from './gemini/gemini.service';
-import { buildSummarizePrompt, buildTranslatePrompt } from './prompts';
+import { buildAnalyzePrompt, buildSummarizePrompt, buildTranslatePrompt } from './prompts';
 import { ArticleService } from 'src/article/article.service';
 import {
   SummarizeArticleDto,
   SummaryLength,
 } from './dto/summarize-article.dto';
 import { TranslateArticleDto } from './dto/translate-article.dto';
-import { AnalyzeArticleDto } from './dto/analyze-article.dto';
+import { AnalyzeArticleDto, AnalyzeTask } from './dto/analyze-article.dto';
 
 @Injectable()
 export class AiService {
@@ -28,6 +28,25 @@ export class AiService {
       }
       throw new BadRequestException('Invalid AI response format');
     }
+  }
+
+  private normalizeSuggestions(input: any): string[] {
+    if (Array.isArray(input)) {
+      return input.map(String);
+    }
+    if (typeof input === 'string') {
+      return [input];
+    }
+    return [];
+  }
+
+  private normalizeSeverity(value: any): 'info' | 'warning' | 'error' {
+    const allowed = ['info', 'warning', 'error'];
+
+    if (typeof value === 'string' && allowed.includes(value.toLowerCase())) {
+      return value.toLowerCase() as any;
+    }
+    return 'info';
   }
 
   async summarizeArticle(articleId: string, dto: SummarizeArticleDto) {
@@ -61,9 +80,11 @@ export class AiService {
       sourceLanguage,
     );
 
-    const summary = (await this.geminiService.generateContext(prompt)).trim();
+    const rawResponse = (
+      await this.geminiService.generateContext(prompt)
+    ).trim();
 
-    const parsed = this.safeJsonParse(summary);
+    const parsed = this.safeJsonParse(rawResponse);
     if (!parsed.translatedText || !parsed.detectedLanguage) {
       throw new BadRequestException('AI response missing required fields');
     }
@@ -75,11 +96,24 @@ export class AiService {
     };
   }
 
-  async analyzeArticle(articleId: string, body: AnalyzeArticleDto) {
+  async analyzeArticle(articleId: string, dto: AnalyzeArticleDto) {
+    const { task = AnalyzeTask.REVIEW } = dto;
+
+    const article = await this.articleService.findById(articleId);
+
+    const prompt = buildAnalyzePrompt(article.content, task);
+
+    const rawResponse = (
+      await this.geminiService.generateContext(prompt)
+    ).trim();
+
+    const parsed = this.safeJsonParse(rawResponse);
+
     return {
-      message: 'Analyze not implemented yet',
       articleId,
-      body,
+      analysis: parsed.analysis ?? rawResponse,
+      suggestions: this.normalizeSuggestions(parsed.suggestions),
+      severity: this.normalizeSeverity(parsed.severity),
     };
   }
 }

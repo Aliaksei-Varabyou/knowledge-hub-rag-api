@@ -19,5 +19,10 @@ export const buildAnalyzePrompt = (
 
     Text:
     """${text}"""
+
+    Return ONLY valid JSON.
+    Do not include explanations outside JSON.
+    Ensure suggestions is an array of strings.
+    Ensure severity is one of: info, warning, error.
   `;
 };
