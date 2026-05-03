@@ -3,7 +3,6 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 
-
 @Injectable()
 export class GeminiService {
   private readonly apiKey: string;
@@ -18,29 +17,56 @@ export class GeminiService {
     this.model = this.configService.get<string>('GEMINI_MODEL');
   }
 
+  private async withRetry<T>(
+    fn: () => Promise<T>,
+    retries = 3,
+    delayMs = 500,
+  ): Promise<T> {
+    try {
+      return await fn();
+    } catch (error: any) {
+      const status = error.response?.status;
+      const isRetryable =
+        error.code === 'ECONNABORTED' || // timeout
+        !status || // network
+        status === 429 ||
+        status >= 500;
+
+      if (!isRetryable || retries === 0) {
+        throw error;
+      }
+
+      await new Promise((res) => setTimeout(res, delayMs));
+
+      return this.withRetry(fn, retries - 1, delayMs * 2);
+    }
+  }
+
   async generateContext(prompt: string): Promise<string> {
     const url = `${this.baseUrl}/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
 
     try {
-      const response = await firstValueFrom(
-        this.httpService.post(
-          url,
-          {
-            contents: {
-              parts: [{ text: prompt }],
+      return this.withRetry(async () => {
+        const response = await firstValueFrom(
+          this.httpService.post(
+            url,
+            {
+              contents: {
+                parts: [{ text: prompt }],
+              },
             },
-          },
-          { timeout: 5000 },
-        ),
-      );
-      const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) {
-        throw new HttpException(
-          'Invalid response from AI',
-          HttpStatus.BAD_GATEWAY,
+            { timeout: 5000 },
+          ),
         );
-      }
-      return text;
+        const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) {
+          throw new HttpException(
+            'Invalid response from AI',
+            HttpStatus.BAD_GATEWAY,
+          );
+        }
+        return text;
+      });
     } catch (error: any) {
       if (error.code === 'ECONNABORTED') {
         throw new HttpException(
@@ -54,7 +80,7 @@ export class GeminiService {
         throw new HttpException(
           'AI authentificate failed',
           HttpStatus.INTERNAL_SERVER_ERROR,
-        )
+        );
       }
       if (status === 429) {
         throw new HttpException(
