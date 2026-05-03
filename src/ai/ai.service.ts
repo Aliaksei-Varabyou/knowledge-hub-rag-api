@@ -52,6 +52,20 @@ export class AiService {
     });
   }
 
+  private usage = {
+    totalRequests: 0,
+    byEndpoint: {
+      summarize: 0,
+      translate: 0,
+      analyze: 0,
+    },
+  };
+
+  private trackUsage(endpoint: 'summarize' | 'translate' | 'analyze') {
+    this.usage.totalRequests++;
+    this.usage.byEndpoint[endpoint]++;
+  }
+
   private safeJsonParse(text: string): any {
     try {
       return JSON.parse(text);
@@ -111,6 +125,7 @@ export class AiService {
       summaryLength: summary.length,
     };
     this.setCache(cacheKey, result);
+    this.trackUsage('summarize');
     return result;
   }
 
@@ -154,6 +169,7 @@ export class AiService {
       detectedLanguage: parsed.detectedLanguage,
     };
     this.setCache(cacheKey, result);
+    this.trackUsage('translate');
     return result;
   }
 
@@ -186,6 +202,11 @@ export class AiService {
       severity: this.normalizeSeverity(parsed.severity),
     };
     this.setCache(cacheKey, result);
+    this.trackUsage('analyze');
     return result;
+  }
+
+  getUsage() {
+    return this.usage;
   }
 }

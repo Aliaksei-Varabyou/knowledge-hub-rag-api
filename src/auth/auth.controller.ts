@@ -11,7 +11,7 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Public()
-  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Throttle({ default: { limit: 3, ttl: 60 } })
   @Post('signup')
   async signup(@Body() dto: SignupDto) {
     await this.authService.signUp(dto);
@@ -22,7 +22,7 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Throttle({ default: { limit: 5, ttl: 60 } })
   @Post('login')
   @HttpCode(200)
   async login(@Body() dto: LoginDto) {
