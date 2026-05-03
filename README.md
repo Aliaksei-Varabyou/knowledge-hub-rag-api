@@ -87,11 +87,11 @@ All AI functionality is implemented in a dedicated `AiModule` with isolated serv
 
 ### How to get Gemini API key
 
-Go to: https://aistudio.google.com/app/apikey
-Sign in with your Google account
-Click Create API key
-Select or create a Google Cloud project
-Copy the generated API key
+- Go to: https://aistudio.google.com/app/apikey
+- Sign in with your Google account
+- Click Create API key
+- Select or create a Google Cloud project
+- Copy the generated API key
 
 Make sure the Generative Language API is enabled in your Google Cloud project:
 https://console.cloud.google.com/
