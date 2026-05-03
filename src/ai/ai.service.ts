@@ -1,7 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { GeminiService } from './gemini/gemini.service';
-import { buildSummarizePrompt, SummaryLength } from './prompts';
+import { buildSummarizePrompt } from './prompts';
 import { ArticleService } from 'src/article/article.service';
+import {
+  SummarizeArticleDto,
+  SummaryLength,
+} from './dto/summarize-article.dto';
+import { TranslateArticleDto } from './dto/translate-article.dto';
+import { AnalyzeArticleDto } from './dto/analyze-article.dto';
 
 @Injectable()
 export class AiService {
@@ -10,11 +16,8 @@ export class AiService {
     private readonly articleService: ArticleService,
   ) {}
 
-  async summarizeArticle(
-    articleId: string,
-    body: { maxLength?: SummaryLength },
-  ) {
-    const { maxLength = 'medium' } = body;
+  async summarizeArticle(articleId: string, dto: SummarizeArticleDto) {
+    const { maxLength = SummaryLength.MEDIUM } = dto;
 
     const article = await this.articleService.findById(articleId);
 
@@ -30,7 +33,7 @@ export class AiService {
     };
   }
 
-  async translateArticle(articleId: string, body: any) {
+  async translateArticle(articleId: string, body: TranslateArticleDto) {
     return {
       message: 'Translate not implemented yet',
       articleId,
@@ -38,7 +41,7 @@ export class AiService {
     };
   }
 
-  async analyzeArticle(articleId: string, body: any) {
+  async analyzeArticle(articleId: string, body: AnalyzeArticleDto) {
     return {
       message: 'Analyze not implemented yet',
       articleId,
