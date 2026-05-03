@@ -1,12 +1,32 @@
 import { Injectable } from '@nestjs/common';
+import { GeminiService } from './gemini/gemini.service';
+import { buildSummarizePrompt, SummaryLength } from './prompts';
+import { ArticleService } from 'src/article/article.service';
 
 @Injectable()
 export class AiService {
-  async summarizeArticle(articleId: string, body: any) {
+  constructor(
+    private readonly geminiService: GeminiService,
+    private readonly articleService: ArticleService,
+  ) {}
+
+  async summarizeArticle(
+    articleId: string,
+    body: { maxLength?: SummaryLength },
+  ) {
+    const { maxLength = 'medium' } = body;
+
+    const article = await this.articleService.findById(articleId);
+
+    const prompt = buildSummarizePrompt(article.content, maxLength);
+
+    const summary = (await this.geminiService.generateContext(prompt)).trim();
+
     return {
-      message: 'Summarize not implemented yet',
       articleId,
-      body,
+      summary,
+      originalLength: article.content.length,
+      summaryLength: summary.length,
     };
   }
 
