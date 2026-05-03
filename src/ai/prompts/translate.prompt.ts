@@ -21,5 +21,6 @@ export const buildTranslatePrompt = (
       "translatedText": "...",
       "detectedLanguage": "..."
     }
+    Return ONLY valid JSON. No extra text.
   `;
 };

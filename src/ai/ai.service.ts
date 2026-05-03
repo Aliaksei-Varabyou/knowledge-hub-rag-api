@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { GeminiService } from './gemini/gemini.service';
-import { buildSummarizePrompt } from './prompts';
+import { buildSummarizePrompt, buildTranslatePrompt } from './prompts';
 import { ArticleService } from 'src/article/article.service';
 import {
   SummarizeArticleDto,
@@ -15,6 +15,20 @@ export class AiService {
     private readonly geminiService: GeminiService,
     private readonly articleService: ArticleService,
   ) {}
+
+  private safeJsonParse(text: string): any {
+    try {
+      return JSON.parse(text);
+    } catch (error) {
+      const match = text.match(/\{[\s\S]*\}/);
+      if (match) {
+        try {
+          return JSON.parse(match[0]);
+        } catch {}
+      }
+      throw new BadRequestException('Invalid AI response format');
+    }
+  }
 
   async summarizeArticle(articleId: string, dto: SummarizeArticleDto) {
     const { maxLength = SummaryLength.MEDIUM } = dto;
@@ -33,11 +47,31 @@ export class AiService {
     };
   }
 
-  async translateArticle(articleId: string, body: TranslateArticleDto) {
+  async translateArticle(articleId: string, dto: TranslateArticleDto) {
+    const { targetLanguage, sourceLanguage } = dto;
+    if (!targetLanguage) {
+      throw new BadRequestException('Target language is required');
+    }
+
+    const article = await this.articleService.findById(articleId);
+
+    const prompt = buildTranslatePrompt(
+      article.content,
+      targetLanguage,
+      sourceLanguage,
+    );
+
+    const summary = (await this.geminiService.generateContext(prompt)).trim();
+
+    const parsed = this.safeJsonParse(summary);
+    if (!parsed.translatedText || !parsed.detectedLanguage) {
+      throw new BadRequestException('AI response missing required fields');
+    }
+
     return {
-      message: 'Translate not implemented yet',
       articleId,
-      body,
+      translatedText: parsed.translatedText,
+      detectedLanguage: parsed.detectedLanguage,
     };
   }
 
