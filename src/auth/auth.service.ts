@@ -74,7 +74,7 @@ export class AuthService {
   async refresh(dto: RefreshDto) {
     const { refreshToken } = dto;
     if (!refreshToken) {
-      throw new UnauthorizedError('No access token proveded');
+      throw new UnauthorizedError('No access token provided');
     }
     if (this.blacklistedTokens.has(refreshToken)) {
       throw new ForbiddenError('Token is blacklisted');

@@ -12,7 +12,7 @@ export class AiController {
 
   @Post('articles/:articleId/summarize')
   summarizeArticle(
-    @Param() articleId: string,
+    @Param('articleId') articleId: string,
     @Body() body: SummarizeArticleDto,
   ) {
     return this.aiService.summarizeArticle(articleId, body);
