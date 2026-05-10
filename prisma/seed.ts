@@ -1,6 +1,7 @@
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { ArticleStatus, PrismaClient, Role } from '../generated/prisma/client';
+import { hash } from 'bcrypt';
 
 const connectionString = `${process.env.DATABASE_URL}`;
 const pool = new Pool({ connectionString });
@@ -19,14 +20,14 @@ async function main() {
   const admin = await prismaClient.user.create({
     data: {
       login: 'admin',
-      password: 'admin123',
+      password: await hash('admin123', 10),
       role: Role.ADMIN,
     },
   });
   const editor = await prismaClient.user.create({
     data: {
       login: 'editor',
-      password: 'editor123',
+      password: await hash('editor123', 10),
       role: Role.EDITOR,
     },
   });

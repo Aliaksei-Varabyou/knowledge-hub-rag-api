@@ -10,6 +10,6 @@ import { AppLogger } from 'src/common/logger/logger.service';
   imports: [HttpModule, ArticleModule],
   controllers: [AiController],
   providers: [AiService, GeminiService, AppLogger],
-  exports: [AiService],
+  exports: [AiService, GeminiService],
 })
 export class AiModule {}
