@@ -132,4 +132,9 @@ export class GeminiService {
       throw new ServiceUnavailableException('Embedding service unavailable');
     }
   }
+
+  async getEmbeddingsDimensions(): Promise<number> {
+    const embedding = await this.generateEmbeddings('Dimensions test');
+    return embedding.length;
+  }
 }
