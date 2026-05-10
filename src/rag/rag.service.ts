@@ -7,6 +7,8 @@ import { QdrantService } from './qdrant.service';
 import { ReindexRequestDto } from './dto/reindex-request.dto';
 import { ArticleStatus } from 'src/common/types';
 import { RagSearchRequestDto } from './dto/rag-search-request.dto';
+import { RagChatRequestDto } from './dto/rag-chat-request.dto';
+import { buildRagChatPrompt } from './prompts/rag-chat.prompt';
 
 const RAG_POINT_NAMESPACE = '4e48c97b-1d3d-4f0a-9c32-35b12a9e7a6b';
 
@@ -165,6 +167,46 @@ export class RagService {
         chunk: point.payload?.chunk,
         similarity: point.score,
       })),
+    };
+  }
+
+  private async retrieveRelevantChunks(query: string, limit = 5) {
+    const client = this.qdrantService.getClient();
+    const collectionName = this.qdrantService.getCollectionName();
+    const embedding = await this.geminiService.generateEmbeddings(query);
+
+    return client.search(collectionName, {
+      vector: embedding,
+      limit,
+    });
+  }
+
+  async chat(dto: RagChatRequestDto) {
+    const retrievedChunks = await this.retrieveRelevantChunks(dto.question, 5);
+    if (!retrievedChunks.length) {
+      return {
+        answer: 'No relevant information found.',
+        sources: [],
+        conversationId: dto.conversationId ?? crypto.randomUUID(),
+      };
+    }
+
+    const context = retrievedChunks
+      .map((chunk) => chunk.payload?.chunk)
+      .join('\n\n');
+
+    const prompt = buildRagChatPrompt(dto.question, context);
+    const answer = await this.geminiService.generateContext(prompt);
+
+    return {
+      answer,
+      sources: retrievedChunks.map((chunk) => ({
+        articleId: chunk.payload?.articleId,
+        articleTitle: chunk.payload?.articleTitle,
+        relevantChunk: chunk.payload?.chunk,
+      })),
+
+      conversationId: dto.conversationId ?? crypto.randomUUID(),
     };
   }
 }

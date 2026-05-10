@@ -62,7 +62,7 @@ export class GeminiService {
                 parts: [{ text: prompt }],
               },
             },
-            { timeout: 5000 },
+            { timeout: 20000 },
           ),
         );
         const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;

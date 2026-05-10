@@ -10,6 +10,7 @@ import { RagService } from './rag.service';
 import { Public } from 'src/auth/decorators/public.decorator';
 import { ReindexRequestDto } from './dto/reindex-request.dto';
 import { RagSearchRequestDto } from './dto/rag-search-request.dto';
+import { RagChatRequestDto } from './dto/rag-chat-request.dto';
 
 @Controller('ai/rag')
 export class RagController {
@@ -32,5 +33,11 @@ export class RagController {
   @Public()
   async search(@Body() dto: RagSearchRequestDto) {
     return this.ragService.search(dto);
+  }
+
+  @Post('chat')
+  @Public()
+  async chat(@Body() dto: RagChatRequestDto) {
+    return this.ragService.chat(dto);
   }
 }
