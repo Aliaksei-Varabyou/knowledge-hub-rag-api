@@ -1,14 +1,15 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { RagService } from './rag.service';
 import { Public } from 'src/auth/decorators/public.decorator';
+import { ReindexRequestDto } from './dto/reindex-request.dto';
 
 @Controller('ai/rag')
 export class RagController {
   constructor(private readonly ragService: RagService) {}
 
-  @Get('/test_embedding')
+  @Post('index')
   @Public()
-  async testEmbedding() {
-    return this.ragService.TestEmbedding();
+  async index(@Body() dto: ReindexRequestDto) {
+    return this.ragService.indexArticles(dto);
   }
 }

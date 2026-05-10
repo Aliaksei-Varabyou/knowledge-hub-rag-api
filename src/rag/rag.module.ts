@@ -6,9 +6,10 @@ import { QdrantService } from './qdrant.service';
 import { RagController } from './rag.controller';
 import { AiModule } from 'src/ai/ai.module';
 import { ChunkingService } from './chunking.service';
+import { ArticleModule } from 'src/article/article.module';
 
 @Module({
-  imports: [ConfigModule, AiModule],
+  imports: [ConfigModule, AiModule, ArticleModule],
   providers: [RagService, QdrantService, ChunkingService],
   exports: [RagService, QdrantService],
   controllers: [RagController],

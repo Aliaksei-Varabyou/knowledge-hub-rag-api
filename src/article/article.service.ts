@@ -67,6 +67,19 @@ export class ArticleService {
     });
   }
 
+  async findManyByIds(ids: string[]): Promise<Article[]> {
+    return await this.prisma.article.findMany({
+      where: {
+        id: { in: ids },
+      },
+      include: {
+        author: true,
+        category: true,
+        tags: true,
+      },
+    });
+  }
+
   async findByIdOrThrow(id: string): Promise<Article | never> {
     const article = await this.findById(id);
     if (!article) {
