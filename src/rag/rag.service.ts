@@ -13,13 +13,14 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class RagService {
   private readonly conversations = new Map<string, ConversationMessage[]>();
+  private readonly maxConversationMessages: number;
+
   constructor(
     private readonly geminiService: GeminiService,
     private readonly articleService: ArticleService,
     private readonly chunkingService: ChunkingService,
     private readonly qdrantService: QdrantService,
     private readonly config: ConfigService,
-    private readonly maxConversationMessages: number,
   ) {
     this.maxConversationMessages = this.config.get<number>(
       'RAG_CONVERSATION_MAX_MESSAGES',
@@ -78,10 +79,12 @@ export class RagService {
         }),
       );
 
-      await client.upsert(collectionName, {
-        wait: true,
-        points,
-      });
+      await this.qdrantService.execute(() =>
+        client.upsert(collectionName, {
+          wait: true,
+          points,
+        }),
+      );
     }
 
     return {
@@ -95,19 +98,21 @@ export class RagService {
     const client = this.qdrantService.getClient();
     const collectionName = this.qdrantService.getCollectionName();
 
-    const existing = await client.scroll(collectionName, {
-      filter: {
-        must: [
-          {
-            key: 'articleId',
-            match: {
-              value: articleId,
+    const existing = await this.qdrantService.execute(() =>
+      client.scroll(collectionName, {
+        filter: {
+          must: [
+            {
+              key: 'articleId',
+              match: {
+                value: articleId,
+              },
             },
-          },
-        ],
-      },
-      limit: 1,
-    });
+          ],
+        },
+        limit: 1,
+      }),
+    );
     if (!existing.points.length) {
       throw new NotFoundException('Article vectors not found');
     }
@@ -153,11 +158,13 @@ export class RagService {
     const collectionName = this.qdrantService.getCollectionName();
     const embedding = await this.geminiService.generateEmbeddings(dto.query);
 
-    const searchResult = await client.search(collectionName, {
-      vector: embedding,
-      limit: dto.limit ?? 5,
-      filter: this.buildSearchFilter(dto),
-    });
+    const searchResult = await this.qdrantService.execute(() =>
+      client.search(collectionName, {
+        vector: embedding,
+        limit: dto.limit ?? 5,
+        filter: this.buildSearchFilter(dto),
+      }),
+    );
 
     return {
       results: searchResult.map((point) => ({
@@ -174,10 +181,12 @@ export class RagService {
     const collectionName = this.qdrantService.getCollectionName();
     const embedding = await this.geminiService.generateEmbeddings(query);
 
-    return client.search(collectionName, {
-      vector: embedding,
-      limit,
-    });
+    return this.qdrantService.execute(() =>
+      client.search(collectionName, {
+        vector: embedding,
+        limit,
+      }),
+    );
   }
 
   async chat(dto: RagChatRequestDto) {
@@ -247,38 +256,42 @@ export class RagService {
     const client = this.qdrantService.getClient();
     const collectionName = this.qdrantService.getCollectionName();
 
-    await client.delete(collectionName, {
-      filter: {
-        must: [
-          {
-            key: 'articleId',
-            match: {
-              value: articleId,
+    await this.qdrantService.execute(() =>
+      client.delete(collectionName, {
+        filter: {
+          must: [
+            {
+              key: 'articleId',
+              match: {
+                value: articleId,
+              },
             },
-          },
-        ],
-      },
-      wait: true,
-    });
+          ],
+        },
+        wait: true,
+      }),
+    );
   }
 
   private async hasArticleVectors(articleId: string): Promise<boolean> {
     const client = this.qdrantService.getClient();
     const collectionName = this.qdrantService.getCollectionName();
 
-    const result = await client.scroll(collectionName, {
-      filter: {
-        must: [
-          {
-            key: 'articleId',
-            match: {
-              value: articleId,
+    const result = await this.qdrantService.execute(() =>
+      client.scroll(collectionName, {
+        filter: {
+          must: [
+            {
+              key: 'articleId',
+              match: {
+                value: articleId,
+              },
             },
-          },
-        ],
-      },
-      limit: 1,
-    });
+          ],
+        },
+        limit: 1,
+      }),
+    );
 
     return result.points.length > 0;
   }

@@ -109,26 +109,32 @@ export class GeminiService {
     const url = `${this.baseUrl}/v1beta/models/${model}:embedContent?key=${this.apiKey}`;
 
     try {
-      const response = await firstValueFrom(
-        this.httpService.post(
-          url,
-          {
-            model: `models/${model}`,
-            content: {
-              parts: [{ text }],
+      return await this.withRetry(async () => {
+        const response = await firstValueFrom(
+          this.httpService.post(
+            url,
+            {
+              model: `models/${model}`,
+              content: {
+                parts: [{ text }],
+              },
             },
-          },
-          { timeout: 10000 },
-        ),
-      );
+            { timeout: 10000 },
+          ),
+        );
 
-      const embedding = response.data?.embedding?.values;
-      if (!embedding || !Array.isArray(embedding)) {
-        throw new Error('Invalid embedding response');
-      }
-      return embedding;
-    } catch (error) {
-      this.logger.error('Failed to generate embedding');
+        const embedding = response.data?.embedding?.values;
+        if (!embedding || !Array.isArray(embedding)) {
+          throw new Error('Invalid embedding response');
+        }
+        return embedding;
+      });
+    } catch (error: any) {
+      this.logger.error({
+        message: 'Failed to generate embedding',
+        status: error.response?.status,
+        code: error.code,
+      });
       throw new ServiceUnavailableException('Embedding service unavailable');
     }
   }
