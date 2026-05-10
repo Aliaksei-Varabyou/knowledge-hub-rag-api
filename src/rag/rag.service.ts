@@ -1,25 +1,31 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { v5 as uuidv5 } from 'uuid';
 import { GeminiService } from 'src/ai/gemini/gemini.service';
 import { ArticleService } from 'src/article/article.service';
 import { ChunkingService } from './chunking.service';
 import { QdrantService } from './qdrant.service';
 import { ReindexRequestDto } from './dto/reindex-request.dto';
-import { ArticleStatus } from 'src/common/types';
+import { ArticleStatus, ConversationMessage } from 'src/common/types';
 import { RagSearchRequestDto } from './dto/rag-search-request.dto';
 import { RagChatRequestDto } from './dto/rag-chat-request.dto';
 import { buildRagChatPrompt } from './prompts/rag-chat.prompt';
-
-const RAG_POINT_NAMESPACE = '4e48c97b-1d3d-4f0a-9c32-35b12a9e7a6b';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class RagService {
+  private readonly conversations = new Map<string, ConversationMessage[]>();
   constructor(
     private readonly geminiService: GeminiService,
     private readonly articleService: ArticleService,
     private readonly chunkingService: ChunkingService,
     private readonly qdrantService: QdrantService,
-  ) {}
+    private readonly config: ConfigService,
+    private readonly maxConversationMessages: number,
+  ) {
+    this.maxConversationMessages = this.config.get<number>(
+      'RAG_CONVERSATION_MAX_MESSAGES',
+      20,
+    );
+  }
 
   private async getArticlesForIndexing(dto: ReindexRequestDto) {
     if (dto.articleIds?.length) {
@@ -182,6 +188,10 @@ export class RagService {
   }
 
   async chat(dto: RagChatRequestDto) {
+    const conversationId = dto.conversationId ?? crypto.randomUUID();
+    const history = this.getConversationHistory(conversationId);
+    const formattedHistory = this.formatConversationHistory(history);
+
     const retrievedChunks = await this.retrieveRelevantChunks(dto.question, 5);
     if (!retrievedChunks.length) {
       return {
@@ -195,8 +205,16 @@ export class RagService {
       .map((chunk) => chunk.payload?.chunk)
       .join('\n\n');
 
-    const prompt = buildRagChatPrompt(dto.question, context);
+    const prompt = buildRagChatPrompt(dto.question, context, formattedHistory);
     const answer = await this.geminiService.generateContext(prompt);
+    this.saveConversationMessage(conversationId, {
+      role: 'user',
+      content: dto.question,
+    });
+    this.saveConversationMessage(conversationId, {
+      role: 'assistant',
+      content: answer,
+    });
 
     return {
       answer,
@@ -209,4 +227,28 @@ export class RagService {
       conversationId: dto.conversationId ?? crypto.randomUUID(),
     };
   }
+
+  private getConversationHistory(
+    conversationId: string,
+  ): ConversationMessage[] {
+    return this.conversations.get(conversationId) ?? [];
+  }
+
+  private saveConversationMessage(
+    conversationId: string,
+    message: ConversationMessage,
+  ) {
+    const history = this.getConversationHistory(conversationId);
+    history.push(message);
+    const trimmedHistory = history.slice(-this.maxConversationMessages);
+    this.conversations.set(conversationId, trimmedHistory);
+  }
+
+  private formatConversationHistory(history: ConversationMessage[]): string {
+    return history
+      .map((message) => `${message.role}: ${message.content}`)
+      .join('\n');
+  }
+
+
 }
