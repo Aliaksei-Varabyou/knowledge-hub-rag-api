@@ -39,6 +39,10 @@ export class RagService {
     return result.data;
   }
 
+  private buildChunkPointId(articleId: string, chunkIndex: number) {
+    return `${articleId}-${chunkIndex}`;
+  }
+
   async indexArticles(dto: ReindexRequestDto) {
     const articles = await this.getArticlesForIndexing(dto);
     const client = this.qdrantService.getClient();
@@ -47,6 +51,7 @@ export class RagService {
     let indexedChunks = 0;
 
     for (const article of articles) {
+      await this.removeArticleVectors(article.id);
       const chunks = this.chunkingService.chunkText(article.content);
 
       const points = await Promise.all(
@@ -56,7 +61,7 @@ export class RagService {
           indexedChunks++;
 
           return {
-            id: crypto.randomUUID(),
+            id: this.buildChunkPointId(article.id, index),
 
             vector: embedding,
 
@@ -107,19 +112,7 @@ export class RagService {
       throw new NotFoundException('Article vectors not found');
     }
 
-    await client.delete(collectionName, {
-      filter: {
-        must: [
-          {
-            key: 'articleId',
-            match: {
-              value: articleId,
-            },
-          },
-        ],
-      },
-      wait: true,
-    });
+    await this.removeArticleVectors(articleId);
   }
 
   private buildSearchFilter(dto: RagSearchRequestDto) {
@@ -250,5 +243,43 @@ export class RagService {
       .join('\n');
   }
 
+  private async removeArticleVectors(articleId: string) {
+    const client = this.qdrantService.getClient();
+    const collectionName = this.qdrantService.getCollectionName();
 
+    await client.delete(collectionName, {
+      filter: {
+        must: [
+          {
+            key: 'articleId',
+            match: {
+              value: articleId,
+            },
+          },
+        ],
+      },
+      wait: true,
+    });
+  }
+
+  private async hasArticleVectors(articleId: string): Promise<boolean> {
+    const client = this.qdrantService.getClient();
+    const collectionName = this.qdrantService.getCollectionName();
+
+    const result = await client.scroll(collectionName, {
+      filter: {
+        must: [
+          {
+            key: 'articleId',
+            match: {
+              value: articleId,
+            },
+          },
+        ],
+      },
+      limit: 1,
+    });
+
+    return result.points.length > 0;
+  }
 }
