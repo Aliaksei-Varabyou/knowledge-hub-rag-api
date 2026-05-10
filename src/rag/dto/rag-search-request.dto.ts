@@ -8,6 +8,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { ArticleStatus } from 'src/common/types';
 
 export class RagSearchRequestDto {
   @IsString()
@@ -20,8 +21,8 @@ export class RagSearchRequestDto {
   limit?: number = 5;
 
   @IsOptional()
-  @IsEnum(['draft', 'published', 'archived'])
-  articleStatus?: 'draft' | 'published' | 'archived';
+  @IsEnum(ArticleStatus)
+  articleStatus?: ArticleStatus;
 
   @IsOptional()
   @IsString()

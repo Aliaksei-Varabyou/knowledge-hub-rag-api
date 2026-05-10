@@ -3,10 +3,18 @@ import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { PrismaService } from 'prisma/prisma.service';
 import { GetArticlesQueryDto } from './dto/get-articles.dto';
-import { Article } from 'generated/prisma/client';
+import { Article, Prisma } from 'generated/prisma/client';
 import { CurrentUserType, ArticleStatus, Role } from 'src/common/types';
 import { NotFoundError } from 'src/common/errors/not-found.error';
 import { ForbiddenError } from 'src/common/errors/forbidden.error';
+
+type ArticleWithRelations = Prisma.ArticleGetPayload<{
+  include: {
+    author: true;
+    category: true;
+    tags: true;
+  };
+}>;
 
 @Injectable()
 export class ArticleService {
@@ -67,11 +75,27 @@ export class ArticleService {
     });
   }
 
-  async findManyByIds(ids: string[]): Promise<Article[]> {
+  async findManyByIds(ids: string[]): Promise<ArticleWithRelations[]> {
     return await this.prisma.article.findMany({
       where: {
         id: { in: ids },
       },
+      include: {
+        author: true,
+        category: true,
+        tags: true,
+      },
+    });
+  }
+
+  async findAllForIndexing(
+    status?: ArticleStatus,
+  ): Promise<ArticleWithRelations[]> {
+    return await this.prisma.article.findMany({
+      where: {
+        ...(status && { status }),
+      },
+      orderBy: { createdAt: 'desc' },
       include: {
         author: true,
         category: true,

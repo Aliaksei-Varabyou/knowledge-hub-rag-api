@@ -33,11 +33,9 @@ export class RagService {
       return this.articleService.findManyByIds(dto.articleIds);
     }
 
-    const result = await this.articleService.findAll({
-      status: dto.onlyPublished ? ArticleStatus.PUBLISHED : undefined,
-    });
-
-    return result.data;
+    return this.articleService.findAllForIndexing(
+      dto.onlyPublished ? ArticleStatus.PUBLISHED : undefined,
+    );
   }
 
   private buildChunkPointId(articleId: string, chunkIndex: number) {
@@ -73,6 +71,7 @@ export class RagService {
               chunkIndex: index,
               status: article.status,
               categoryId: article.categoryId,
+              tags: article.tags?.map((tag) => tag.name) ?? [],
               updatedAt: article.updatedAt,
             },
           };
@@ -199,7 +198,7 @@ export class RagService {
       return {
         answer: 'No relevant information found.',
         sources: [],
-        conversationId: dto.conversationId ?? crypto.randomUUID(),
+        conversationId,
       };
     }
 
@@ -226,7 +225,7 @@ export class RagService {
         relevantChunk: chunk.payload?.chunk,
       })),
 
-      conversationId: dto.conversationId ?? crypto.randomUUID(),
+      conversationId,
     };
   }
 
