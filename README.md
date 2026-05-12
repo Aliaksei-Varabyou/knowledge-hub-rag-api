@@ -4,6 +4,7 @@
 
 - Git - [Download & Install Git](https://git-scm.com/downloads).
 - Node.js - [Download & Install Node.js](https://nodejs.org/en/download/) and the npm package manager.
+- Docker Desktop or Docker Engine with Docker Compose - [Download & Install Docker](https://docs.docker.com/get-docker/).
 
 ## Downloading
 
@@ -13,19 +14,32 @@ git clone {repository URL}
 
 ## Installing NPM modules
 
+Install local dependencies if you want to run development commands such as tests, linting, or `npm start`:
+
 ```
 npm install
 ```
 
 ## Running application
 
+The recommended startup path is Docker Compose, because the application requires PostgreSQL and Qdrant:
+
+```
+cp .env.example .env
+docker compose up -d --build
+```
+
+Set `GEMINI_API_KEY` in `.env` before using AI and RAG endpoints.
+
+After starting the app on port `4000` you can open OpenAPI documentation in your browser:
+http://localhost:4000/doc/.
+For more information about OpenAPI/Swagger please visit https://swagger.io/.
+
+For local development without Docker, make sure PostgreSQL and Qdrant are running and `.env` points to reachable services, then run:
+
 ```
 npm start
 ```
-
-After starting the app on port (4000 as default) you can open
-in your browser OpenAPI documentation by typing http://localhost:4000/doc/.
-For more information about OpenAPI/Swagger please visit https://swagger.io/.
 
 ## Testing
 

@@ -28,11 +28,9 @@ export class AuthService {
       throw new ValidationError('User already exists');
     }
 
-    const hash = await bcrypt.hash(password, 10);
-
     await this.userService.create({
       login,
-      password: hash,
+      password,
       role: Role.VIEWER,
     });
   }
