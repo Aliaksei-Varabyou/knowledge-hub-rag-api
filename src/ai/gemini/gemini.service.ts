@@ -1,13 +1,20 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
+import { AppLogger } from 'src/common/logger/logger.service';
 
 @Injectable()
 export class GeminiService {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly model: string;
+  private logger = new AppLogger();
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
@@ -55,7 +62,7 @@ export class GeminiService {
                 parts: [{ text: prompt }],
               },
             },
-            { timeout: 5000 },
+            { timeout: 20000 },
           ),
         );
         const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -68,6 +75,7 @@ export class GeminiService {
         return text;
       });
     } catch (error: any) {
+      this.logger.error('Failed to generate context');
       if (error.code === 'ECONNABORTED') {
         throw new HttpException(
           'AI service timeout',
@@ -94,5 +102,45 @@ export class GeminiService {
         HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
+  }
+
+  async generateEmbeddings(text: string): Promise<number[]> {
+    const model = this.configService.get<string>('GEMINI_EMBEDDING_MODEL');
+    const url = `${this.baseUrl}/v1beta/models/${model}:embedContent?key=${this.apiKey}`;
+
+    try {
+      return await this.withRetry(async () => {
+        const response = await firstValueFrom(
+          this.httpService.post(
+            url,
+            {
+              model: `models/${model}`,
+              content: {
+                parts: [{ text }],
+              },
+            },
+            { timeout: 10000 },
+          ),
+        );
+
+        const embedding = response.data?.embedding?.values;
+        if (!embedding || !Array.isArray(embedding)) {
+          throw new Error('Invalid embedding response');
+        }
+        return embedding;
+      });
+    } catch (error: any) {
+      this.logger.error({
+        message: 'Failed to generate embedding',
+        status: error.response?.status,
+        code: error.code,
+      });
+      throw new ServiceUnavailableException('Embedding service unavailable');
+    }
+  }
+
+  async getEmbeddingsDimensions(): Promise<number> {
+    const embedding = await this.generateEmbeddings('Dimensions test');
+    return embedding.length;
   }
 }

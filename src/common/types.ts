@@ -54,3 +54,8 @@ export type Comment = {
   authorId: string | null;
   createdAt: number;
 };
+
+export interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}

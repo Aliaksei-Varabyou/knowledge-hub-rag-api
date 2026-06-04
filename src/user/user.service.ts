@@ -6,6 +6,7 @@ import { User } from 'generated/prisma/client';
 import { CurrentUserType, Role } from 'src/common/types';
 import { ForbiddenError } from 'src/common/errors/forbidden.error';
 import { NotFoundError } from 'src/common/errors/not-found.error';
+import { compare, hash } from 'bcrypt';
 
 const returnedUser = {
   id: true,
@@ -16,6 +17,8 @@ const returnedUser = {
 };
 
 type UserWithoutPassword = Omit<User, 'password'>;
+
+const CRYPT_SALT = parseInt(process.env.CRYPT_SALT ?? '10');
 
 @Injectable()
 export class UserService {
@@ -47,7 +50,7 @@ export class UserService {
     return this.prisma.user.create({
       data: {
         login: createUserDto.login,
-        password: createUserDto.password,
+        password: await hash(createUserDto.password, CRYPT_SALT),
         role: createUserDto.role ?? Role.VIEWER,
       },
       select: returnedUser,
@@ -63,13 +66,22 @@ export class UserService {
     if (user.role === Role.EDITOR && currentUser.userId !== user.id) {
       throw new ForbiddenError('Editor can update only own resources');
     }
-    if (user.password !== updatePasswordDto.oldPassword) {
+    const isPasswordValid = await compare(
+      updatePasswordDto.oldPassword,
+      user.password,
+    );
+    if (!isPasswordValid) {
       throw new ForbiddenError('Old password does not match');
     }
+
+    const hashedNewPassword = await hash(
+      updatePasswordDto.newPassword,
+      CRYPT_SALT,
+    );
     return this.prisma.user.update({
       where: { id },
       data: {
-        password: updatePasswordDto.newPassword,
+        password: hashedNewPassword,
       },
       select: returnedUser,
     });

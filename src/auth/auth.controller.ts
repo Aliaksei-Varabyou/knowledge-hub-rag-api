@@ -17,7 +17,7 @@ export class AuthController {
     await this.authService.signUp(dto);
 
     return {
-      message: 'User successfully creatred',
+      message: 'User successfully created',
     };
   }
 

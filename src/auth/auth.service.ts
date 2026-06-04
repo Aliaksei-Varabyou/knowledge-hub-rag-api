@@ -28,11 +28,9 @@ export class AuthService {
       throw new ValidationError('User already exists');
     }
 
-    const hash = await bcrypt.hash(password, 10);
-
     await this.userService.create({
       login,
-      password: hash,
+      password,
       role: Role.VIEWER,
     });
   }
@@ -74,7 +72,7 @@ export class AuthService {
   async refresh(dto: RefreshDto) {
     const { refreshToken } = dto;
     if (!refreshToken) {
-      throw new UnauthorizedError('No access token proveded');
+      throw new UnauthorizedError('No access token provided');
     }
     if (this.blacklistedTokens.has(refreshToken)) {
       throw new ForbiddenError('Token is blacklisted');

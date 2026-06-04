@@ -101,7 +101,7 @@ export class AiService {
 
   async summarizeArticle(articleId: string, dto: SummarizeArticleDto) {
     const { maxLength = SummaryLength.MEDIUM } = dto;
-    const article = await this.articleService.findById(articleId);
+    const article = await this.articleService.findByIdOrThrow(articleId);
 
     const cacheKey = this.buildCacheKey(
       'summarize',
@@ -134,7 +134,7 @@ export class AiService {
     if (!targetLanguage) {
       throw new BadRequestException('Target language is required');
     }
-    const article = await this.articleService.findById(articleId);
+    const article = await this.articleService.findByIdOrThrow(articleId);
 
     const cacheKey = this.buildCacheKey(
       'translate',
@@ -175,7 +175,7 @@ export class AiService {
 
   async analyzeArticle(articleId: string, dto: AnalyzeArticleDto) {
     const { task = AnalyzeTask.REVIEW } = dto;
-    const article = await this.articleService.findById(articleId);
+    const article = await this.articleService.findByIdOrThrow(articleId);
 
     const cacheKey = this.buildCacheKey(
       'analyze',

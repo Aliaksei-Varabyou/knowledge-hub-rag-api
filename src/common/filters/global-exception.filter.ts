@@ -2,6 +2,7 @@ import {
   ArgumentsHost,
   Catch,
   ExceptionFilter,
+  HttpException,
   HttpStatus,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
@@ -19,10 +20,36 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'An unexpected error occurred';
+    let error = 'Internal Server Error';
 
     if (exception instanceof AppError) {
       statusCode = exception.statusCode;
       message = exception.message;
+      error = exception.name || 'Error';
+    } else if (exception instanceof HttpException) {
+      statusCode = exception.getStatus();
+      const response = exception.getResponse();
+
+      if (typeof response === 'string') {
+        message = response;
+        error = exception.name || 'HttpException';
+      } else {
+        const payload = response as Record<string, unknown>;
+        const responseMessage = payload.message;
+
+        if (Array.isArray(responseMessage)) {
+          message = responseMessage.join(', ');
+        } else if (typeof responseMessage === 'string') {
+          message = responseMessage;
+        } else {
+          message = exception.message;
+        }
+
+        error =
+          typeof payload.error === 'string'
+            ? payload.error
+            : exception.name || 'HttpException';
+      }
     }
 
     this.logger.error(
@@ -37,10 +64,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     response.status(statusCode).json({
       statusCode,
-      error:
-        statusCode === 500
-          ? 'Internal Server Error'
-          : exception.name || 'Error',
+      error,
       message,
     });
   }
