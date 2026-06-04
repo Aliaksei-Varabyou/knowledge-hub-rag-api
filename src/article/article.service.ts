@@ -1,0 +1,169 @@
+import { Injectable } from '@nestjs/common';
+import { CreateArticleDto } from './dto/create-article.dto';
+import { UpdateArticleDto } from './dto/update-article.dto';
+import { PrismaService } from 'prisma/prisma.service';
+import { GetArticlesQueryDto } from './dto/get-articles.dto';
+import { Article, Prisma } from 'generated/prisma/client';
+import { CurrentUserType, ArticleStatus, Role } from 'src/common/types';
+import { NotFoundError } from 'src/common/errors/not-found.error';
+import { ForbiddenError } from 'src/common/errors/forbidden.error';
+
+type ArticleWithRelations = Prisma.ArticleGetPayload<{
+  include: {
+    author: true;
+    category: true;
+    tags: true;
+  };
+}>;
+
+@Injectable()
+export class ArticleService {
+  constructor(private prisma: PrismaService) {}
+
+  async findAll(query: GetArticlesQueryDto) {
+    const page = Number(query.page) || 1;
+    const limit = Math.min(Number(query.limit) || 10, 50);
+    const skip = (page - 1) * limit;
+    const allowedSortFields = ['createdAt', 'updatedAt', 'title'];
+    const sortBy = allowedSortFields.includes(query.sortBy)
+      ? query.sortBy
+      : 'createdAt';
+    const order = query.order === 'asc' ? 'asc' : 'desc';
+
+    const where = {
+      ...(query.status && { status: query.status }),
+      ...(query.categoryId && { categoryId: query.categoryId }),
+      ...(query.tag && {
+        tags: {
+          some: { name: query.tag },
+        },
+      }),
+    };
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.article.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: order },
+        include: {
+          author: true,
+          category: true,
+          tags: true,
+        },
+      }),
+      this.prisma.article.count({
+        where,
+      }),
+    ]);
+    return {
+      data,
+      total,
+      page,
+      limit,
+    };
+  }
+
+  async findById(id: string): Promise<Article | null> {
+    return await this.prisma.article.findUnique({
+      where: { id },
+      include: {
+        author: true,
+        category: true,
+        tags: true,
+      },
+    });
+  }
+
+  async findManyByIds(ids: string[]): Promise<ArticleWithRelations[]> {
+    return await this.prisma.article.findMany({
+      where: {
+        id: { in: ids },
+      },
+      include: {
+        author: true,
+        category: true,
+        tags: true,
+      },
+    });
+  }
+
+  async findAllForIndexing(
+    status?: ArticleStatus,
+  ): Promise<ArticleWithRelations[]> {
+    return await this.prisma.article.findMany({
+      where: {
+        ...(status && { status }),
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        author: true,
+        category: true,
+        tags: true,
+      },
+    });
+  }
+
+  async findByIdOrThrow(id: string): Promise<Article | never> {
+    const article = await this.findById(id);
+    if (!article) {
+      throw new NotFoundError(`Article with ID "${id}" not found`);
+    }
+    return article;
+  }
+
+  async create(createArticleDto: CreateArticleDto): Promise<Article> {
+    return await this.prisma.article.create({
+      data: {
+        title: createArticleDto.title,
+        content: createArticleDto.content,
+        status: createArticleDto.status ?? ArticleStatus.DRAFT,
+        authorId: createArticleDto.authorId ?? null,
+        categoryId: createArticleDto.categoryId ?? null,
+        tags: createArticleDto.tags?.length
+          ? {
+              connectOrCreate: createArticleDto.tags.map((name) => ({
+                where: { name },
+                create: { name },
+              })),
+            }
+          : undefined,
+      },
+    });
+  }
+
+  async update(
+    id: string,
+    updateArticleDto: UpdateArticleDto,
+    user: CurrentUserType,
+  ): Promise<Article> {
+    const article = await this.prisma.article.findUnique({ where: { id } });
+    if (user.role === Role.EDITOR && article.authorId !== user.userId) {
+      throw new ForbiddenError('Editor can update only own resources');
+    }
+
+    return await this.prisma.article.update({
+      where: { id },
+      data: {
+        ...updateArticleDto,
+        tags: updateArticleDto.tags?.length
+          ? {
+              set: [],
+              connectOrCreate: updateArticleDto.tags.map((name) => ({
+                where: { name },
+                create: { name },
+              })),
+            }
+          : undefined,
+      },
+    });
+  }
+
+  async delete(id: string): Promise<void> {
+    try {
+      await this.prisma.article.delete({ where: { id } });
+    } catch {
+      throw new NotFoundError(`Article with ID "${id}" not found`);
+    }
+  }
+}
