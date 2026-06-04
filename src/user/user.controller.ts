@@ -18,7 +18,7 @@ import { isValidUUID } from 'src/common/utils';
 import { removeField } from 'src/common/interceptors/exclude-password.interceptor';
 import { CurrentUserType, User } from 'src/common/types';
 import { Roles } from 'src/auth/decorators/roles.decorator';
-import { Role } from 'generated/prisma/enums';
+import { Role } from 'src/common/types';
 import { CurrentUser } from 'src/auth/decorators/user.decorator';
 
 @Controller('user')

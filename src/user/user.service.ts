@@ -1,13 +1,12 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { PrismaService } from 'prisma/prisma.service';
-import { Role, User } from 'generated/prisma/client';
-import { CurrentUserType } from 'src/common/types';
+import { User } from 'generated/prisma/client';
+import { CurrentUserType, Role } from 'src/common/types';
+import { ForbiddenError } from 'src/common/errors/forbidden.error';
+import { NotFoundError } from 'src/common/errors/not-found.error';
+import { compare, hash } from 'bcrypt';
 
 const returnedUser = {
   id: true,
@@ -18,6 +17,8 @@ const returnedUser = {
 };
 
 type UserWithoutPassword = Omit<User, 'password'>;
+
+const CRYPT_SALT = parseInt(process.env.CRYPT_SALT ?? '10');
 
 @Injectable()
 export class UserService {
@@ -40,7 +41,7 @@ export class UserService {
   async findByIdOrThrow(id: string): Promise<User | never> {
     const user = await this.findById(id);
     if (!user) {
-      throw new NotFoundException(`User with ID "${id}" not found`);
+      throw new NotFoundError(`User with ID "${id}" not found`);
     }
     return user;
   }
@@ -49,7 +50,7 @@ export class UserService {
     return this.prisma.user.create({
       data: {
         login: createUserDto.login,
-        password: createUserDto.password,
+        password: await hash(createUserDto.password, CRYPT_SALT),
         role: createUserDto.role ?? Role.VIEWER,
       },
       select: returnedUser,
@@ -63,15 +64,24 @@ export class UserService {
   ): Promise<UserWithoutPassword> {
     const user = await this.findByIdOrThrow(id);
     if (user.role === Role.EDITOR && currentUser.userId !== user.id) {
-      throw new ForbiddenException('Editor can update only own resources');
+      throw new ForbiddenError('Editor can update only own resources');
     }
-    if (user.password !== updatePasswordDto.oldPassword) {
-      throw new ForbiddenException('Old password does not match');
+    const isPasswordValid = await compare(
+      updatePasswordDto.oldPassword,
+      user.password,
+    );
+    if (!isPasswordValid) {
+      throw new ForbiddenError('Old password does not match');
     }
+
+    const hashedNewPassword = await hash(
+      updatePasswordDto.newPassword,
+      CRYPT_SALT,
+    );
     return this.prisma.user.update({
       where: { id },
       data: {
-        password: updatePasswordDto.newPassword,
+        password: hashedNewPassword,
       },
       select: returnedUser,
     });
@@ -83,7 +93,7 @@ export class UserService {
         where: { id },
       });
     } catch {
-      throw new NotFoundException(`User with ID "${id}" not found`);
+      throw new NotFoundError(`User with ID "${id}" not found`);
     }
   }
 }

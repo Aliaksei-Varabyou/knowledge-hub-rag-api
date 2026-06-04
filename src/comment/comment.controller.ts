@@ -14,7 +14,7 @@ import { CommentService } from './comment.service';
 import { isValidUUID } from 'src/common/utils';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { Roles } from 'src/auth/decorators/roles.decorator';
-import { Role } from 'generated/prisma/enums';
+import { Role } from 'src/common/types';
 
 @Controller('comment')
 export class CommentController {

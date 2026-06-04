@@ -5,7 +5,7 @@ import {
   IsArray,
   IsOptional,
 } from 'class-validator';
-import { ArticleStatus } from 'generated/prisma/client';
+import { ArticleStatus } from 'src/common/types';
 
 export class CreateArticleDto {
   @IsNotEmpty()

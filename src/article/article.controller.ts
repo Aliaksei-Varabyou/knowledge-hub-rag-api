@@ -15,10 +15,10 @@ import { ArticleService } from './article.service';
 import { isValidUUID } from 'src/common/utils';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { CreateArticleDto } from './dto/create-article.dto';
-import { Article, ArticleStatus, Role } from 'generated/prisma/client';
+import { Article } from 'generated/prisma/client';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { CurrentUser } from 'src/auth/decorators/user.decorator';
-import { CurrentUserType } from 'src/common/types';
+import { CurrentUserType, ArticleStatus, Role } from 'src/common/types';
 
 @Controller('article')
 export class ArticleController {

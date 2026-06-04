@@ -15,7 +15,7 @@ import { isValidUUID } from 'src/common/utils';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Roles } from 'src/auth/decorators/roles.decorator';
-import { Role } from 'generated/prisma/enums';
+import { Role } from 'src/common/types';
 
 @Controller('category')
 export class CategoryController {

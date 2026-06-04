@@ -3,7 +3,7 @@
 set -e
 
 echo "Running migrations..."
-npx prisma migrate deploy
+./node_modules/.bin/prisma migrate deploy
 
 if [ "${RUN_SEED:-true}" = "true" ]; then
   echo "Seeding..."

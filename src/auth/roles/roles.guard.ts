@@ -5,13 +5,12 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Role } from 'generated/prisma/enums';
 import { Observable } from 'rxjs';
-import { User } from 'src/common/types';
+import { User, Role } from 'src/common/types';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {};
+  constructor(private reflector: Reflector) {}
 
   canActivate(
     context: ExecutionContext,
